@@ -10,12 +10,26 @@ import CoreData
 import UIKit
 
 class MasterViewController: UITableViewController {
-
+    
     var detailViewController: DetailViewController? = nil
     var managedObjectContext: NSManagedObjectContext?
     var dataService: NewsService?
     var model: HeadlineListModel?
 
+    
+    @IBAction func refreshAction(_ sender: UIRefreshControl) {
+        
+        dataService?.downloadHeadlines {
+            self.model?.refresh()
+            
+            DispatchQueue.main.async {
+                self.refreshControl?.endRefreshing()
+                self.tableView.reloadData()
+            }
+        }
+        
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -31,28 +45,15 @@ class MasterViewController: UITableViewController {
         loadHeadlines()
     }
     
-    //TODO: make this func take a completion closure that then refreshes the FRC. This is awkward code.
     func loadHeadlines() {
         
-        guard let moc = managedObjectContext else {
-            return
-        }
-        
-        dataService?.getNBCUNews(completion: { (headlines) in
+        dataService?.downloadHeadlines {
+            self.model?.refresh()
+            
             DispatchQueue.main.async {
-                do {
-                    for jsonDictionary in headlines {
-                        _ = NewsItem(usingJSON: jsonDictionary, inManagedObjectContext: moc)
-                    }
-                    try moc.save()
-                    self.model?.refresh()
-                    self.tableView.reloadData()
-                }
-                catch let error as NSError {
-                    print("Error: \(error) saving news items")
-                }
+                self.tableView.reloadData()
             }
-        })
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -88,8 +89,6 @@ class MasterViewController: UITableViewController {
         }
     }
 }
-
-
 
 extension MasterViewController {
     // MARK: - Table View
@@ -130,21 +129,15 @@ extension MasterViewController {
             cell.textLabel?.textColor = UIColor.gray
             cell.detailTextLabel?.textColor = UIColor.gray
         }
+        else {
+            cell.textLabel?.textColor = UIColor.darkText
+            cell.detailTextLabel?.textColor = UIColor.darkText
+        }
         return cell
     }
     
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         return false
-    }
-    
-    //TODO: Replace this with a custom editing action to mark as read.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-//            objects.remove(at: indexPath.row)
-//            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
-        }
     }
 }
 

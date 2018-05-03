@@ -26,6 +26,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UISplitViewControllerDele
         if let masterControllerNavigationController = splitViewController.viewControllers.first as? UINavigationController,
             let masterController = masterControllerNavigationController.topViewController as? MasterViewController {
             masterController.dataService = NewsService()
+            masterController.dataService?.managedObjectContext = coreDataStack.managedContext
             masterController.managedObjectContext = coreDataStack.managedContext
         }
         return true
